@@ -300,18 +300,18 @@ function initMap() {
   if (map) { setTimeout(() => map.invalidateSize(), 50); return; }
   if (!window.L) { $("map").innerHTML = `<p class="pad muted">No se pudo cargar el mapa (sin conexión).</p>`; return; }
   map = L.map("map", {
-    zoomControl: true, attributionControl: true, minZoom: 6, maxZoom: 13,
+    zoomControl: true, attributionControl: true, minZoom: 6, maxZoom: 16,
     maxBounds: [[PROV.bbox.s - 3, PROV.bbox.w - 4], [PROV.bbox.n + 3, PROV.bbox.e + 4]], maxBoundsViscosity: 0.8,
   }).setView(PROV.center, 7);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 13, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 16, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   }).addTo(map);
 
   layers.geocolor = L.tileLayer(`${GIBS}/GOES-East_ABI_GeoColor/default/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png`, {
-    maxNativeZoom: 7, maxZoom: 13, opacity: 0.85, attribution: 'Satélite: <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a> GOES-Este',
+    maxNativeZoom: 7, maxZoom: 16, opacity: 0.85, attribution: 'Satélite: <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a> GOES-Este',
   });
   layers.ir = L.tileLayer(`${GIBS}/GOES-East_ABI_Band13_Clean_Infrared/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`, {
-    maxNativeZoom: 6, maxZoom: 13, opacity: 0.7, attribution: 'Infrarrojo: <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a> GOES-Este',
+    maxNativeZoom: 6, maxZoom: 16, opacity: 0.7, attribution: 'Infrarrojo: <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a> GOES-Este',
   });
   alertGroup = L.layerGroup();
   layers.alerts = alertGroup;
@@ -368,7 +368,7 @@ async function toggleSatAnimation() {
   satFrames = times.map((t) => ({
     t,
     layer: L.tileLayer(`${GIBS}/${s.id}/default/${t.toISOString().slice(0, 19)}Z/${s.tms}/{z}/{y}/{x}.png`, {
-      maxNativeZoom: s.z, maxZoom: 13, opacity: 0, zIndex: 200, attribution: `${s.label}: <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a> GOES-Este`,
+      maxNativeZoom: s.z, maxZoom: 16, opacity: 0, zIndex: 200, attribution: `${s.label}: <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a> GOES-Este`,
     }).addTo(map),
   }));
   layers[satKey].remove();
@@ -425,7 +425,7 @@ function showRadarFrame(i) {
   if (!map || !radarFrames.length) return;
   const f = radarFrames[i];
   const next = L.tileLayer(`${radarHost}${f.path}/256/{z}/{x}/{y}/2/1_1.png`, {
-    maxNativeZoom: 7, maxZoom: 13, opacity: 0.75, zIndex: 400,
+    maxNativeZoom: 7, maxZoom: 16, opacity: 0.75, zIndex: 400,
     attribution: 'Radar: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a>',
   });
   next.addTo(map);

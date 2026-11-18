@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Convierte el KML/KMZ de predios en predios.json (liviano) para el mapa.
 
-Uso: python3 kml_predios.py archivo.kmz predios.json [--sin-nombres] [--tolerancia 0.00015]
-Guarda solo el nombre del predio y las hectáreas (o nada con --sin-nombres) y simplifica
-los contornos (~15 m) para que cargue rápido en el celular.
+Uso: python3 kml_predios.py archivo.kmz predios.json [--sin-nombres] [--tolerancia 0]
+Guarda solo el nombre del predio y las hectáreas (o nada con --sin-nombres). Por defecto
+conserva los contornos completos, igual que Google Maps; el mapa (Leaflet) ya simplifica
+el dibujo según el zoom. --tolerancia en grados solo si hiciera falta achicar el archivo.
 """
 import json, re, sys, zipfile, xml.etree.ElementTree as ET
 
@@ -41,11 +42,13 @@ def ring(text, tol):
     for tok in text.split():
         p = tok.split(",")
         if len(p) >= 2:
-            pts.append([round(float(p[1]), 5), round(float(p[0]), 5)])
+            pts.append([round(float(p[1]), 6), round(float(p[0]), 6)])
     if len(pts) < 4:
         return None
+    if tol <= 0:
+        return pts
     s = dp(pts, tol)
-    return s if len(s) >= 4 else pts[:: max(1, len(pts) // 8)] + [pts[0]]
+    return s if len(s) >= 4 else pts  # anillos chicos: se dejan completos
 
 
 def field(desc, key):
@@ -56,7 +59,7 @@ def field(desc, key):
 def main():
     src, dest = sys.argv[1], sys.argv[2]
     no_names = "--sin-nombres" in sys.argv
-    tol = float(sys.argv[sys.argv.index("--tolerancia") + 1]) if "--tolerancia" in sys.argv else 0.00015
+    tol = float(sys.argv[sys.argv.index("--tolerancia") + 1]) if "--tolerancia" in sys.argv else 0.0
     root = ET.fromstring(read_kml(src))
     out, total_in, total_out = [], 0, 0
     for i, pm in enumerate(root.iter("{http://www.opengis.net/kml/2.2}Placemark"), 1):
