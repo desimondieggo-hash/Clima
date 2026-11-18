@@ -32,6 +32,8 @@ jobs:
           touch _site/.nojekyll
       - name: Alertas del SMN
         run: python3 scripts/smn_alerts.py _site/alerts.json || echo "No se pudieron leer las alertas; queda la versión vacía."
+      - name: Última imagen de satélite
+        run: python3 scripts/gibs_times.py _site/gibs.json || echo "{}" > _site/gibs.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

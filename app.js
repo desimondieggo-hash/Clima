@@ -327,7 +327,9 @@ function initMap() {
 
   document.querySelectorAll(".layer-bar .chip").forEach((b) => b.addEventListener("click", () => toggleLayer(b)));
   $("playBtn").addEventListener("click", toggleRadarAnimation);
+  $("satPlayBtn").addEventListener("click", toggleSatAnimation);
   $("prediosBtn").addEventListener("click", verPredios);
+  map.on("zoomend", updatePredioLabels);
 }
 
 function placeMarker() {
@@ -336,8 +338,66 @@ function placeMarker() {
   marker = L.circleMarker([place.lat, place.lon], { radius: 7, color: "#fff", weight: 2, fillColor: "#1f78b4", fillOpacity: 1 }).addTo(map).bindTooltip(placeLabel(place));
 }
 
+// ---------------------------------------------------------------- Animación del satélite (últimas 2 h)
+const SAT = {
+  ir: { id: "GOES-East_ABI_Band13_Clean_Infrared", tms: "GoogleMapsCompatible_Level6", z: 6, op: 0.7, label: "Infrarrojo" },
+  geocolor: { id: "GOES-East_ABI_GeoColor", tms: "GoogleMapsCompatible_Level7", z: 7, op: 0.85, label: "Satélite" },
+};
+let satFrames = [], satTimer = null, satIdx = 0, satKey = null, gibsTimes = null;
+
+async function latestSatTime(id) {
+  if (!gibsTimes) { try { gibsTimes = await (await fetch(`gibs.json?t=${Math.floor(Date.now() / 600000)}`)).json(); } catch { gibsTimes = {}; } }
+  const t = gibsTimes[id] ? new Date(gibsTimes[id]) : null;
+  if (t && Date.now() - t.getTime() < 3 * 3600e3) return t;
+  // Sin dato: unos 40 min atrás, redondeado a 10 min (la NASA publica con demora).
+  const d = new Date(Date.now() - 40 * 60e3);
+  d.setUTCMinutes(Math.floor(d.getUTCMinutes() / 10) * 10, 0, 0);
+  return d;
+}
+
+async function toggleSatAnimation() {
+  if (satTimer || satFrames.length) { stopSat(); return; }
+  satKey = document.querySelector('.chip[data-layer="ir"]').classList.contains("on") ? "ir" : "geocolor";
+  const s = SAT[satKey];
+  if (!document.querySelector(`.chip[data-layer="${satKey}"]`).classList.contains("on")) {
+    document.querySelector(`.chip[data-layer="${satKey}"]`).classList.add("on");
+  }
+  $("satPlayBtn").textContent = "⏳ Cargando…";
+  const last = await latestSatTime(s.id);
+  const times = Array.from({ length: 12 }, (_, i) => new Date(last.getTime() - (11 - i) * 10 * 60e3));
+  satFrames = times.map((t) => ({
+    t,
+    layer: L.tileLayer(`${GIBS}/${s.id}/default/${t.toISOString().slice(0, 19)}Z/${s.tms}/{z}/{y}/{x}.png`, {
+      maxNativeZoom: s.z, maxZoom: 13, opacity: 0, zIndex: 200, attribution: `${s.label}: <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a> GOES-Este`,
+    }).addTo(map),
+  }));
+  layers[satKey].remove();
+  // Esperar a que se descarguen las imágenes antes de arrancar (máx. 8 s).
+  await Promise.race([Promise.all(satFrames.map((f) => new Promise((r) => f.layer.once("load", r)))), new Promise((r) => setTimeout(r, 8000))]);
+  if (!satFrames.length) return;
+  $("satPlayBtn").textContent = "⏸ Pausar satélite";
+  satIdx = 0;
+  const step = () => {
+    satFrames.forEach((f, i) => f.layer.setOpacity(i === satIdx ? s.op : 0));
+    $("satTime").textContent = `${s.label}: ${satFrames[satIdx].t.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`;
+    satIdx = (satIdx + 1) % satFrames.length;
+  };
+  step();
+  satTimer = setInterval(step, 600);
+}
+
+function stopSat() {
+  clearInterval(satTimer); satTimer = null;
+  satFrames.forEach((f) => f.layer.remove());
+  satFrames = [];
+  $("satPlayBtn").textContent = "▶ Animar satélite";
+  $("satTime").textContent = "";
+  if (satKey && document.querySelector(`.chip[data-layer="${satKey}"]`).classList.contains("on")) layers[satKey].addTo(map);
+}
+
 function toggleLayer(btn) {
   const name = btn.dataset.layer;
+  if ((name === "ir" || name === "geocolor") && (satTimer || satFrames.length)) stopSat();
   const on = !btn.classList.contains("on");
   btn.classList.toggle("on", on);
   if (name === "radar") { on ? showRadarFrame(radarIdx) : (layers.radar && layers.radar.remove(), stopRadar()); return; }
@@ -397,11 +457,21 @@ function stopRadar() {
 function drawPredios() {
   if (!prediosGroup || !predios.length) return;
   prediosGroup.clearLayers();
+  // Doble trazo (borde oscuro + línea amarilla) para que se vea sobre el satélite, las nubes y el mapa.
   for (const pr of predios) {
-    L.polygon(pr.p, { color: "#1b7f3b", weight: 1.5, fillColor: "#2ecc71", fillOpacity: 0.15, interactive: true })
+    L.polygon(pr.p, { color: "#111", weight: 5, opacity: 0.55, fill: false, interactive: false }).addTo(prediosGroup);
+    L.polygon(pr.p, { color: "#ffe14d", weight: 2.2, fillColor: "#ffe14d", fillOpacity: 0.08 })
       .bindPopup(`<b>${esc(pr.n)}</b>${pr.ha ? `<br><small>${pr.ha.toLocaleString("es-AR")} ha</small>` : ""}`)
+      .bindTooltip(esc(pr.n), { permanent: true, direction: "center", className: "predio-label", opacity: 1 })
       .addTo(prediosGroup);
   }
+  updatePredioLabels();
+}
+/** Nombres de los predios solo cuando hay zoom suficiente para leerlos. */
+function updatePredioLabels() {
+  if (!map || !prediosGroup) return;
+  const show = map.getZoom() >= 11;
+  document.getElementById("map").classList.toggle("show-predio-labels", show);
 }
 function verPredios() {
   if (!map || !predios.length) return;
