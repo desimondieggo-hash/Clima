@@ -457,13 +457,17 @@ function stopRadar() {
 function drawPredios() {
   if (!prediosGroup || !predios.length) return;
   prediosGroup.clearLayers();
+  // Un predio en varias partes lleva el nombre una sola vez, en la parte más grande.
+  const size = (pr) => pr.p.reduce((n, rings) => n + rings[0].length, 0);
+  const labeled = new Map();
+  for (const pr of predios) if (!labeled.has(pr.n) || size(pr) > size(labeled.get(pr.n))) labeled.set(pr.n, pr);
   // Doble trazo (borde oscuro + línea amarilla) para que se vea sobre el satélite, las nubes y el mapa.
   for (const pr of predios) {
     L.polygon(pr.p, { color: "#111", weight: 5, opacity: 0.55, fill: false, interactive: false }).addTo(prediosGroup);
     L.polygon(pr.p, { color: "#ffe14d", weight: 2.2, fillColor: "#ffe14d", fillOpacity: 0.08 })
       .bindPopup(`<b>${esc(pr.n)}</b>${pr.ha ? `<br><small>${pr.ha.toLocaleString("es-AR")} ha</small>` : ""}`)
-      .bindTooltip(esc(pr.n), { permanent: true, direction: "center", className: "predio-label", opacity: 1 })
-      .addTo(prediosGroup);
+      .addTo(prediosGroup)
+      .bindTooltip(labeled.get(pr.n) === pr ? esc(pr.n) : "", { permanent: labeled.get(pr.n) === pr, direction: "center", className: "predio-label", opacity: 1 });
   }
   updatePredioLabels();
 }
