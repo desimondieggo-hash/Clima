@@ -146,3 +146,8 @@ dialog::backdrop { background: rgba(0,0,0,.45); }
 .btn { padding: 12px; border-radius: 12px; border: 0; background: var(--accent); color: #fff; font-weight: 700; font-size: 15px; }
 @media (prefers-color-scheme: dark) { .btn { color: #0d1720; } }
 .btn.ghost { background: transparent; color: var(--muted); }
+
+.towns { display: flex; flex-wrap: wrap; gap: 6px; max-height: 30vh; overflow-y: auto; }
+.towns .chip { padding: 7px 12px; font-size: 13.5px; }
+.prov-note { margin: 8px 16px 0; font-size: 13.5px; font-weight: 600; color: var(--naranja); cursor: pointer; }
+.prov-note:empty { display: none; }

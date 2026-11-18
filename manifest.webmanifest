@@ -1,7 +1,7 @@
 {
-  "name": "Clima",
-  "short_name": "Clima",
-  "description": "Pronóstico, satélite, radar, alertas del SMN y estado de rutas. Sin publicidad.",
+  "name": "Clima Corrientes",
+  "short_name": "Clima Ctes",
+  "description": "El clima de la provincia de Corrientes: pronóstico, satélite, radar, alertas del SMN y rutas. Sin publicidad.",
   "lang": "es-AR",
   "start_url": "./",
   "scope": "./",

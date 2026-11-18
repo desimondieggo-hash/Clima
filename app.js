@@ -3,7 +3,17 @@
    RainViewer (radar), SMN (alertas, vía alerts.json que arma una tarea de GitHub). */
 "use strict";
 
-const DEFAULT_PLACE = { name: "Posadas", admin: "Misiones", country: "Argentina", lat: -27.3671, lon: -55.8961 };
+const DEFAULT_PLACE = { name: "Corrientes", admin: "Corrientes", country: "Argentina", lat: -27.4692, lon: -58.8306 };
+// La app es solo para la provincia de Corrientes.
+const PROV = { name: "Corrientes", bbox: { s: -30.8, n: -27.15, w: -59.75, e: -55.6 }, center: [-28.75, -57.9] };
+const inProvince = (lat, lon) => lat >= PROV.bbox.s && lat <= PROV.bbox.n && lon >= PROV.bbox.w && lon <= PROV.bbox.e;
+const TOWNS = [
+  ["Corrientes", -27.4692, -58.8306], ["Goya", -29.1400, -59.2626], ["Paso de los Libres", -29.7128, -57.0877],
+  ["Santo Tomé", -28.5494, -56.0411], ["Curuzú Cuatiá", -29.7917, -58.0546], ["Mercedes", -29.1818, -58.0794],
+  ["Esquina", -30.0144, -59.5272], ["Bella Vista", -28.5096, -59.0434], ["Ituzaingó", -27.5872, -56.6888],
+  ["Gobernador Virasoro", -28.0500, -56.0333], ["Monte Caseros", -30.2530, -57.6363], ["Saladas", -28.2539, -58.6250],
+  ["Santa Lucía", -28.9871, -59.1030], ["Empedrado", -27.9516, -58.8059], ["Sauce", -30.0864, -58.7881],
+];
 const LS_PLACE = "clima.place";
 const LS_FORECAST = "clima.forecast";
 const STALE_MS = 15 * 60 * 1000;
@@ -47,31 +57,41 @@ function showTab(name) {
 }
 
 // ---------------------------------------------------------------- Lugar
-function placeLabel(p) { return [p.name, p.admin].filter(Boolean).join(", "); }
+function placeLabel(p) { return p.name; }
 
 function setPlace(p) {
   place = p;
   store.set(LS_PLACE, p);
   $("placeName").textContent = placeLabel(p);
   loadAll(true);
-  if (map) { map.setView([p.lat, p.lon], 7); placeMarker(); }
+  if (map) { map.setView([p.lat, p.lon], 8); placeMarker(); }
 }
 
 function locate() {
   return new Promise((resolve) => {
     if (!navigator.geolocation) return resolve(null);
     navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ name: "Mi ubicación", admin: "", country: "", lat: +pos.coords.latitude.toFixed(4), lon: +pos.coords.longitude.toFixed(4), gps: true }),
+      (pos) => {
+        const lat = +pos.coords.latitude.toFixed(4), lon = +pos.coords.longitude.toFixed(4);
+        // Fuera de la provincia no sirve: se vuelve a la capital.
+        resolve(inProvince(lat, lon) ? { name: "Mi ubicación", admin: "Corrientes", country: "Argentina", lat, lon, gps: true } : null);
+      },
       () => resolve(null),
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 30 * 60 * 1000 },
     );
   });
 }
 
-$("placeBtn").addEventListener("click", () => { $("placeDialog").showModal(); $("searchInput").focus(); });
+$("placeBtn").addEventListener("click", () => { $("placeDialog").showModal(); });
+for (const [name, lat, lon] of TOWNS) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "chip"; b.textContent = name;
+  b.addEventListener("click", () => { $("placeDialog").close(); setPlace({ name, admin: "Corrientes", country: "Argentina", lat, lon }); });
+  $("towns").appendChild(b);
+}
 $("useGps").addEventListener("click", async () => {
   const p = await locate();
-  if (p) { $("placeDialog").close(); setPlace(p); } else alert("No se pudo obtener la ubicación. Revisá el permiso de ubicación del navegador.");
+  if (p) { $("placeDialog").close(); setPlace(p); } else alert("No se pudo obtener tu ubicación dentro de Corrientes. Revisá el permiso de ubicación o elegí una localidad de la lista.");
 });
 
 let searchTimer;
@@ -84,18 +104,18 @@ $("searchInput").addEventListener("input", (e) => {
 
 async function searchCity(q) {
   try {
-    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=es&format=json`);
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=40&language=es&format=json&countryCode=AR`);
     const j = await r.json();
-    const list = j.results || [];
-    $("results").innerHTML = list.length ? "" : `<li class="muted empty">Sin resultados</li>`;
+    const list = (j.results || []).filter((c) => /corrientes/i.test(c.admin1 || "") || inProvince(c.latitude, c.longitude)).slice(0, 10);
+    $("results").innerHTML = list.length ? "" : `<li class="muted empty">No encontré esa localidad en Corrientes</li>`;
     for (const c of list) {
       const li = document.createElement("li");
       const b = document.createElement("button");
       b.type = "button";
-      b.innerHTML = `${esc(c.name)}<small>${esc([c.admin1, c.country].filter(Boolean).join(", "))}</small>`;
+      b.innerHTML = `${esc(c.name)}<small>${esc([c.admin2, "Corrientes"].filter(Boolean).join(", "))}</small>`;
       b.addEventListener("click", () => {
         $("placeDialog").close();
-        setPlace({ name: c.name, admin: c.admin1 || "", country: c.country || "", lat: c.latitude, lon: c.longitude });
+        setPlace({ name: c.name, admin: "Corrientes", country: "Argentina", lat: c.latitude, lon: c.longitude });
       });
       li.appendChild(b);
       $("results").appendChild(li);
@@ -192,6 +212,12 @@ function pointInPolygon(lat, lon, poly) {
 }
 const alertHere = (a) => (a.areas || []).some((ar) => (ar.polygons || []).some((pg) => pointInPolygon(place.lat, place.lon, pg)));
 
+/** Deja solo las alertas con zonas de Corrientes (el SMN las nombra «CORRIENTES: GOYA - ...»). */
+function onlyCorrientes(list) {
+  return list.map((a) => ({ ...a, areas: (a.areas || []).filter((ar) => /^\s*CORRIENTES\b/i.test(ar.desc || "") || (ar.polygons || []).some((pg) => pg.some(([la, lo]) => inProvince(la, lo)) && /CORRIENTES/i.test(ar.desc || ""))) }))
+    .filter((a) => a.areas.length);
+}
+
 async function loadAlerts() {
   try {
     const r = await fetch(`alerts.json?t=${Math.floor(Date.now() / 60000)}`, { cache: "no-store" });
@@ -202,7 +228,7 @@ async function loadAlerts() {
 
 function alertCard(a) {
   const exp = a.expires ? new Date(a.expires).toLocaleString("es-AR", { weekday: "short", hour: "2-digit", minute: "2-digit" }) : "";
-  const areas = (a.areas || []).map((x) => x.desc).join(" · ");
+  const areas = (a.areas || []).map((x) => x.desc.replace(/^\s*CORRIENTES:\s*/i, "")).join(" · ");
   return `<div class="card alert lv-${a.level}">
     <span class="lvl lv-${a.level}">${esc(a.level)}</span>
     <h3>${esc(a.title)}</h3>
@@ -215,12 +241,14 @@ function alertCard(a) {
 
 function renderAlerts() {
   const now = Date.now();
-  const list = ((alertsData && alertsData.alerts) || []).filter((a) => !a.expires || new Date(a.expires).getTime() > now)
+  const list = onlyCorrientes((alertsData && alertsData.alerts) || []).filter((a) => !a.expires || new Date(a.expires).getTime() > now)
     .sort((a, b) => (LEVEL_ORDER[b.level] || 0) - (LEVEL_ORDER[a.level] || 0));
   const here = list.filter(alertHere), other = list.filter((a) => !alertHere(a));
 
   $("alertsHere").innerHTML = here.length ? here.map(alertCard).join("") : `<div class="card empty muted">No hay alertas del SMN para ${esc(placeLabel(place))}.</div>`;
   $("alertsOther").innerHTML = other.map(alertCard).join("") || `<p class="muted">Ninguna.</p>`;
+  $("provAlertNote").textContent = !here.length && other.length ? `Hay ${other.length} aviso(s) del SMN en otras zonas de Corrientes.` : "";
+  $("provAlertNote").onclick = () => showTab("alertas");
   $("alertsOtherCount").textContent = `(${other.length})`;
   $("alertsUpdated").textContent = alertsData && alertsData.generated
     ? `Datos del SMN consultados ${new Date(alertsData.generated).toLocaleString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}. Se revisan cada 15 minutos.`
@@ -245,7 +273,10 @@ const GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best";
 function initMap() {
   if (map) { setTimeout(() => map.invalidateSize(), 50); return; }
   if (!window.L) { $("map").innerHTML = `<p class="pad muted">No se pudo cargar el mapa (sin conexión).</p>`; return; }
-  map = L.map("map", { zoomControl: true, attributionControl: true, minZoom: 3, maxZoom: 10 }).setView([place.lat, place.lon], 6);
+  map = L.map("map", {
+    zoomControl: true, attributionControl: true, minZoom: 6, maxZoom: 10,
+    maxBounds: [[PROV.bbox.s - 3, PROV.bbox.w - 4], [PROV.bbox.n + 3, PROV.bbox.e + 4]], maxBoundsViscosity: 0.8,
+  }).setView(PROV.center, 7);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 10, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   }).addTo(map);

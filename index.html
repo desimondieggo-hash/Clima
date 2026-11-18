@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Clima</title>
-  <meta name="description" content="Clima personal: pronóstico, satélite, radar, alertas del SMN y estado de rutas. Sin publicidad.">
+  <title>Clima Corrientes</title>
+  <meta name="description" content="El clima de la provincia de Corrientes: pronóstico, satélite, radar, alertas del SMN y estado de rutas. Sin publicidad.">
   <meta name="theme-color" content="#0f3b5f">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Clima">
+  <meta name="apple-mobile-web-app-title" content="Clima Ctes">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -28,6 +28,7 @@
     <!-- HOY -->
     <section id="tab-hoy" class="tab active" aria-label="Pronóstico">
       <div id="alertBanner" class="alert-banner hidden"></div>
+      <p id="provAlertNote" class="prov-note" role="button"></p>
 
       <div class="now card">
         <div class="now-main">
@@ -73,10 +74,10 @@
 
     <!-- ALERTAS -->
     <section id="tab-alertas" class="tab" aria-label="Alertas">
-      <h2>Alertas del SMN en tu zona</h2>
+      <h2>Alertas del SMN en tu localidad</h2>
       <div id="alertsHere"></div>
       <details class="card">
-        <summary>Otras alertas vigentes en el país <span id="alertsOtherCount" class="muted"></span></summary>
+        <summary>Resto de la provincia de Corrientes <span id="alertsOtherCount" class="muted"></span></summary>
         <div id="alertsOther"></div>
       </details>
       <p id="alertsUpdated" class="muted small pad"></p>
@@ -94,7 +95,16 @@
           <b>Ruta0 · Estado de rutas</b><span>Novedades de transitabilidad de todo el país</span>
         </a>
         <a class="link-card" href="https://www.ruta0.com/estado-de-rutas/nea/" target="_blank" rel="noopener">
-          <b>Ruta0 · NEA</b><span>Misiones, Corrientes, Chaco y Formosa</span>
+          <b>Ruta0 · NEA</b><span>Novedades de Corrientes y la región</span>
+        </a>
+        <a class="link-card" href="https://www.ruta0.com/estado-de-rutas/rn-12/" target="_blank" rel="noopener">
+          <b>Ruta Nacional 12</b><span>Corrientes capital – Ituzaingó – Esquina</span>
+        </a>
+        <a class="link-card" href="https://www.ruta0.com/estado-de-rutas/rn-14/" target="_blank" rel="noopener">
+          <b>Ruta Nacional 14</b><span>Paso de los Libres – Santo Tomé – Virasoro</span>
+        </a>
+        <a class="link-card" href="https://www.ruta0.com/estado-de-rutas/rn-123/" target="_blank" rel="noopener">
+          <b>Ruta Nacional 123</b><span>Bella Vista – Mercedes – Paso de los Libres</span>
         </a>
       </div>
     </section>
@@ -122,8 +132,9 @@
   <!-- Buscar ciudad -->
   <dialog id="placeDialog">
     <form method="dialog" class="dlg">
-      <h3>Elegir ciudad</h3>
-      <input id="searchInput" type="search" placeholder="Escribí una ciudad (ej: Oberá)" autocomplete="off">
+      <h3>Elegir localidad de Corrientes</h3>
+      <div id="towns" class="towns"></div>
+      <input id="searchInput" type="search" placeholder="Otra localidad (ej: Mburucuyá)" autocomplete="off">
       <ul id="results" class="results"></ul>
       <button type="button" id="useGps" class="btn">📍 Usar mi ubicación</button>
       <button value="cancel" class="btn ghost">Cerrar</button>
