@@ -253,6 +253,27 @@ async function openAccount() {
   if (me.admin) { refreshMembers(); $("pInfo").textContent = predios.length ? `Cargados: ${predios.length} contornos.` : "Todavía no hay predios cargados."; }
 }
 
+// ---- Compartir por WhatsApp
+const APP_URL = "https://desimondieggo-hash.github.io/Clima/";
+let lastInvited = "";
+const waLink = (t) => "https://wa.me/?text=" + encodeURIComponent(t);
+function inviteText(nombre, email) {
+  const hola = nombre ? `Hola ${nombre.split(" ")[0]}!` : "Hola!";
+  return `${hola} Te invité a *Clima Corrientes*, la app del clima para el monte: pronóstico, radar, alertas del SMN, estado de caminos y reportes con foto de los predios.\n\n` +
+    `1. Abrí este link en el celular: ${APP_URL}\n` +
+    `2. Entrá con Google usando *${email}* (o creá usuario con ese mismo correo y confirmalo desde el mail).\n` +
+    `3. Para tenerla como app: menú del navegador ⋮ → "Agregar a pantalla de inicio" (en iPhone: Compartir → "Agregar a inicio").`;
+}
+function shareText() {
+  return `Te paso *Clima Corrientes*, la app del clima para el monte: ${APP_URL}\n` +
+    `Es privada: para entrar, pedile a Diego que te invite con tu correo de Gmail.`;
+}
+$("shareBtn").addEventListener("click", async () => {
+  const text = shareText();
+  if (navigator.share) { try { await navigator.share({ title: "Clima Corrientes", text }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
+  window.open(waLink(text), "_blank", "noopener");
+});
+
 async function refreshMembers() {
   const ul = $("mList");
   ul.innerHTML = `<li class="muted">Cargando…</li>`;
@@ -262,6 +283,11 @@ async function refreshMembers() {
     for (const m of list) {
       const li = document.createElement("li");
       li.innerHTML = `<span>${esc(m.nombre || "—")}<small>${esc(m.email)}</small></span>`;
+      const w = document.createElement("a");
+      w.className = "wa-btn"; w.target = "_blank"; w.rel = "noopener"; w.textContent = "WhatsApp";
+      w.href = waLink(inviteText(m.nombre, m.email));
+      li.appendChild(w);
+      if (m.email === lastInvited) li.classList.add("just-added");
       const b = document.createElement("button");
       b.type = "button"; b.textContent = "Quitar";
       b.onclick = async () => { if (confirm(`¿Quitar a ${m.email}? Deja de poder entrar.`)) { await FB.removeMember(m.email); refreshMembers(); } };
@@ -274,7 +300,7 @@ async function refreshMembers() {
 $("mAdd").addEventListener("click", async () => {
   const email = $("mEmail").value.trim().toLowerCase(), name = $("mName").value.trim();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return alert("Revisá el correo.");
-  try { await FB.addMember(email, name); $("mEmail").value = ""; $("mName").value = ""; refreshMembers(); }
+  try { await FB.addMember(email, name); lastInvited = email; $("mEmail").value = ""; $("mName").value = ""; await refreshMembers(); $("mList").querySelector(".just-added")?.scrollIntoView({ block: "nearest" }); }
   catch { alert("No se pudo invitar. ¿Están publicadas las reglas de Firestore?"); }
 });
 
