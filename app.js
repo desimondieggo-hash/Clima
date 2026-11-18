@@ -208,7 +208,7 @@ function alertCard(a) {
     <h3>${esc(a.title)}</h3>
     ${exp ? `<p class="muted small">Vigente hasta ${esc(exp)}</p>` : ""}
     <p class="small">${esc(areas)}</p>
-    ${a.instruction ? `<p class="small"><b>Qué hacer:</b> ${esc(a.instruction)}</p>` : ""}
+    ${a.instruction ? `<details class="small"><summary><b>Qué hacer</b></summary><p>${esc(a.instruction)}</p></details>` : ""}
     ${a.web ? `<p class="small"><a href="${esc(a.web)}" target="_blank" rel="noopener">Ver aviso oficial del SMN ↗</a></p>` : ""}
   </div>`;
 }
