@@ -222,6 +222,22 @@ function onlyCorrientes(list) {
     .filter((a) => a.areas.length);
 }
 
+// ---------------------------------------------------------------- Predios
+let predios = [];          // [{n, ha, p: [[[lat,lon],...] (anillos)] por polígono]}
+async function loadPredios() {
+  try { predios = await (await fetch("predios.json")).json(); } catch { predios = []; }
+  drawPredios();
+}
+/** Predios con algún vértice dentro de los polígonos de un aviso. */
+function prediosEnAlerta(a) {
+  const polys = (a.areas || []).flatMap((ar) => ar.polygons || []);
+  if (!polys.length || !predios.length) return [];
+  const hit = predios.filter((pr) => pr.p.some((rings) => rings[0].some(([la, lo], i) => i % 3 === 0 && polys.some((pg) => pointInPolygon(la, lo, pg)))));
+  // Un mismo predio puede venir en varias partes: se cuenta una vez por nombre.
+  return hit.filter((pr, i) => hit.findIndex((x) => x.n === pr.n) === i);
+}
+const nombres = (list, max = 6) => list.slice(0, max).map((p) => p.n).join(", ") + (list.length > max ? ` y ${list.length - max} más` : "");
+
 async function loadAlerts() {
   try {
     const r = await fetch(`alerts.json?t=${Math.floor(Date.now() / 60000)}`, { cache: "no-store" });
@@ -238,6 +254,7 @@ function alertCard(a) {
     <h3>${esc(a.title)}</h3>
     ${exp ? `<p class="muted small">Vigente hasta ${esc(exp)}</p>` : ""}
     <p class="small">${esc(areas)}</p>
+    ${a._predios && a._predios.length ? `<p class="small predios-hit">🌲 <b>${a._predios.length} predio(s) dentro del aviso:</b> ${esc(nombres(a._predios))}</p>` : ""}
     ${a.instruction ? `<details class="small"><summary><b>Qué hacer</b></summary><p>${esc(a.instruction)}</p></details>` : ""}
     ${a.web ? `<p class="small"><a href="${esc(a.web)}" target="_blank" rel="noopener">Ver aviso oficial del SMN ↗</a></p>` : ""}
   </div>`;
@@ -247,7 +264,12 @@ function renderAlerts() {
   const now = Date.now();
   const list = onlyCorrientes((alertsData && alertsData.alerts) || []).filter((a) => !a.expires || new Date(a.expires).getTime() > now)
     .sort((a, b) => (LEVEL_ORDER[b.level] || 0) - (LEVEL_ORDER[a.level] || 0));
+  for (const a of list) a._predios = prediosEnAlerta(a);
   const here = list.filter(alertHere), other = list.filter((a) => !alertHere(a));
+  const conPredios = list.filter((a) => a._predios.length);
+  const nPred = new Set(conPredios.flatMap((a) => a._predios.map((p) => p.n))).size;
+  $("prediosNote").textContent = nPred ? `🌲 ${nPred} predio(s) dentro de avisos del SMN (${conPredios.map((a) => a.level).filter((v, i, x) => x.indexOf(v) === i).join(", ")}). Tocá para ver.` : "";
+  $("prediosNote").onclick = () => showTab("alertas");
 
   $("alertsHere").innerHTML = here.length ? here.map(alertCard).join("") : `<div class="card empty muted">No hay alertas del SMN para ${esc(placeLabel(place))}.</div>`;
   $("alertsOther").innerHTML = other.map(alertCard).join("") || `<p class="muted">Ninguna.</p>`;
@@ -271,28 +293,32 @@ function renderAlerts() {
 }
 
 // ---------------------------------------------------------------- Mapa
-let map, marker, layers = {}, radarFrames = [], radarHost = "", radarIdx = 0, radarTimer = null, alertGroup;
+let prediosGroup, map, marker, layers = {}, radarFrames = [], radarHost = "", radarIdx = 0, radarTimer = null, alertGroup;
 const GIBS = "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best";
 
 function initMap() {
   if (map) { setTimeout(() => map.invalidateSize(), 50); return; }
   if (!window.L) { $("map").innerHTML = `<p class="pad muted">No se pudo cargar el mapa (sin conexión).</p>`; return; }
   map = L.map("map", {
-    zoomControl: true, attributionControl: true, minZoom: 6, maxZoom: 10,
+    zoomControl: true, attributionControl: true, minZoom: 6, maxZoom: 13,
     maxBounds: [[PROV.bbox.s - 3, PROV.bbox.w - 4], [PROV.bbox.n + 3, PROV.bbox.e + 4]], maxBoundsViscosity: 0.8,
   }).setView(PROV.center, 7);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 10, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 13, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   }).addTo(map);
 
   layers.geocolor = L.tileLayer(`${GIBS}/GOES-East_ABI_GeoColor/default/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png`, {
-    maxNativeZoom: 7, maxZoom: 10, opacity: 0.85, attribution: 'Satélite: <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a> GOES-Este',
+    maxNativeZoom: 7, maxZoom: 13, opacity: 0.85, attribution: 'Satélite: <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a> GOES-Este',
   });
   layers.ir = L.tileLayer(`${GIBS}/GOES-East_ABI_Band13_Clean_Infrared/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`, {
-    maxNativeZoom: 6, maxZoom: 10, opacity: 0.7, attribution: 'Infrarrojo: <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a> GOES-Este',
+    maxNativeZoom: 6, maxZoom: 13, opacity: 0.7, attribution: 'Infrarrojo: <a href="https://earthdata.nasa.gov/gibs">NASA GIBS</a> GOES-Este',
   });
   alertGroup = L.layerGroup();
   layers.alerts = alertGroup;
+  prediosGroup = L.layerGroup();
+  layers.predios = prediosGroup;
+  prediosGroup.addTo(map);
+  drawPredios();
   layers.geocolor.addTo(map);
   alertGroup.addTo(map);
   placeMarker();
@@ -301,6 +327,7 @@ function initMap() {
 
   document.querySelectorAll(".layer-bar .chip").forEach((b) => b.addEventListener("click", () => toggleLayer(b)));
   $("playBtn").addEventListener("click", toggleRadarAnimation);
+  $("prediosBtn").addEventListener("click", verPredios);
 }
 
 function placeMarker() {
@@ -338,7 +365,7 @@ function showRadarFrame(i) {
   if (!map || !radarFrames.length) return;
   const f = radarFrames[i];
   const next = L.tileLayer(`${radarHost}${f.path}/256/{z}/{x}/{y}/2/1_1.png`, {
-    maxNativeZoom: 7, maxZoom: 10, opacity: 0.75, zIndex: 400,
+    maxNativeZoom: 7, maxZoom: 13, opacity: 0.75, zIndex: 400,
     attribution: 'Radar: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a>',
   });
   next.addTo(map);
@@ -367,6 +394,23 @@ function stopRadar() {
   if (layers.radar && document.querySelector('.chip[data-layer="radar"]').classList.contains("on")) showRadarFrame(radarIdx);
 }
 
+function drawPredios() {
+  if (!prediosGroup || !predios.length) return;
+  prediosGroup.clearLayers();
+  for (const pr of predios) {
+    L.polygon(pr.p, { color: "#1b7f3b", weight: 1.5, fillColor: "#2ecc71", fillOpacity: 0.15, interactive: true })
+      .bindPopup(`<b>${esc(pr.n)}</b>${pr.ha ? `<br><small>${pr.ha.toLocaleString("es-AR")} ha</small>` : ""}`)
+      .addTo(prediosGroup);
+  }
+}
+function verPredios() {
+  if (!map || !predios.length) return;
+  const b = L.latLngBounds(predios.flatMap((pr) => pr.p.flatMap((rings) => rings[0])));
+  map.fitBounds(b, { padding: [20, 20] });
+  const chip = document.querySelector('.chip[data-layer="predios"]');
+  if (!chip.classList.contains("on")) { chip.classList.add("on"); prediosGroup.addTo(map); }
+}
+
 const LEVEL_COLOR = { amarillo: "#f4c20d", naranja: "#f08a00", rojo: "#d7263d" };
 function drawAlertPolygons(list) {
   if (!alertGroup) return;
@@ -382,7 +426,8 @@ async function loadAll(force = false) {
   if (!force && Date.now() - lastLoad < STALE_MS) return;
   lastLoad = Date.now();
   $("refreshBtn").classList.add("spin");
-  await Promise.all([loadForecast(), loadAlerts(), map ? loadRadar() : null]);
+  const pre = predios.length ? null : loadPredios();
+  await Promise.all([loadForecast(), pre ? pre.then(loadAlerts) : loadAlerts(), map ? loadRadar() : null]);
   $("refreshBtn").classList.remove("spin");
 }
 

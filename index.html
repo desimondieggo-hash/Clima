@@ -29,6 +29,7 @@
     <section id="tab-hoy" class="tab active" aria-label="Pronóstico">
       <div id="alertBanner" class="alert-banner hidden"></div>
       <p id="provAlertNote" class="prov-note" role="button"></p>
+      <p id="prediosNote" class="prov-note predios-note" role="button"></p>
 
       <div class="now card">
         <div class="now-main">
@@ -63,10 +64,12 @@
         <button class="chip" data-layer="ir">Infrarrojo</button>
         <button class="chip on" data-layer="radar">Radar</button>
         <button class="chip on" data-layer="alerts">Alertas</button>
+        <button class="chip on" data-layer="predios">Predios</button>
       </div>
       <div id="map"></div>
       <div class="map-foot">
         <button id="playBtn" class="chip">▶ Animar radar</button>
+        <button id="prediosBtn" class="chip">🌲 Ver predios</button>
         <span id="frameTime" class="muted small"></span>
       </div>
       <p class="muted small pad">Satélite GOES-Este (NASA), se actualiza cada ~10 min. El radar de RainViewer tiene cobertura parcial en Argentina y zoom máximo 7.</p>
