@@ -74,7 +74,11 @@ function locate() {
       (pos) => {
         const lat = +pos.coords.latitude.toFixed(4), lon = +pos.coords.longitude.toFixed(4);
         // Fuera de la provincia no sirve: se vuelve a la capital.
-        resolve(inProvince(lat, lon) ? { name: "Mi ubicación", admin: "Corrientes", country: "Argentina", lat, lon, gps: true } : null);
+        if (!inProvince(lat, lon)) return resolve(null);
+        // Nombre de la localidad de la lista más cercana (Open-Meteo no da el nombre a partir de coordenadas).
+        const near = TOWNS.map(([t, la, lo]) => [t, (la - lat) ** 2 + ((lo - lon) * Math.cos(lat * Math.PI / 180)) ** 2]).sort((a, b) => a[1] - b[1])[0];
+        const km = Math.sqrt(near[1]) * 111;
+        resolve({ name: km < 8 ? near[0] : `Cerca de ${near[0]}`, admin: "Corrientes", country: "Argentina", lat, lon, gps: true });
       },
       () => resolve(null),
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 30 * 60 * 1000 },
