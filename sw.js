@@ -1,6 +1,6 @@
 /* Service worker: guarda la app para abrirla sin señal.
    El pronóstico y las alertas van siempre primero a la red; si no hay, usa lo último guardado. */
-const VERSION = "clima-v5";
+const VERSION = "clima-v6";
 const SHELL = ["./", "index.html", "styles.css", "app.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png",
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css", "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"];
 
@@ -17,7 +17,7 @@ self.addEventListener("fetch", (e) => {
   // Teselas de mapa, radar y satélite: no se guardan (cambian todo el tiempo y ocupan mucho).
   if (/tile\.openstreetmap|gibs\.earthdata|tilecache\.rainviewer/.test(url.host)) return;
   const sameOrigin = url.origin === self.location.origin;
-  const isData = url.pathname.endsWith("alerts.json") || url.pathname.endsWith("gibs.json") || /open-meteo\.com|rainviewer\.com/.test(url.host);
+  const isData = url.pathname.endsWith("alerts.json") || url.pathname.endsWith("gibs.json") || url.pathname.endsWith("fires.json") || /open-meteo\.com|rainviewer\.com/.test(url.host);
   if (isData) {
     e.respondWith(fetch(req).then((res) => { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); return res; })
       .catch(() => caches.match(req, { ignoreSearch: url.pathname.endsWith("alerts.json") })));

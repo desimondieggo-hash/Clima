@@ -50,6 +50,9 @@
         <p id="updated" class="muted small"></p>
       </div>
 
+      <h2>Monte</h2>
+      <div id="monte" class="card monte"><p class="muted small">Calculando…</p></div>
+
       <h2>Próximas 24 horas</h2>
       <div id="hourly" class="hourly" role="list"></div>
 
@@ -65,6 +68,7 @@
         <button class="chip on" data-layer="radar">Radar</button>
         <button class="chip on" data-layer="alerts">Alertas</button>
         <button class="chip on" data-layer="predios">Predios</button>
+        <button class="chip on" data-layer="fires">Focos</button>
       </div>
       <div id="map"></div>
       <div class="map-foot">
@@ -81,6 +85,8 @@
     <section id="tab-alertas" class="tab" aria-label="Alertas">
       <h2>Alertas del SMN en tu localidad</h2>
       <div id="alertsHere"></div>
+      <h2>Focos de calor cerca de tus predios</h2>
+      <div id="firesNear"></div>
       <details class="card">
         <summary>Resto de la provincia de Corrientes <span id="alertsOtherCount" class="muted"></span></summary>
         <div id="alertsOther"></div>
@@ -121,6 +127,7 @@
         Satélite: <a href="https://earthdata.nasa.gov/gibs" target="_blank" rel="noopener">NASA GIBS</a> / GOES-Este ·
         Radar: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a> ·
         Alertas: <a href="https://www.smn.gob.ar/" target="_blank" rel="noopener">Servicio Meteorológico Nacional</a> ·
+        Focos de calor: <a href="https://firms.modaps.eosdis.nasa.gov/" target="_blank" rel="noopener">NASA FIRMS</a> ·
         Mapa: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a> · <a href="https://leafletjs.com/" target="_blank" rel="noopener">Leaflet</a>.
       </p>
       <p>Sin publicidad ni rastreadores. Tu ubicación queda solo en este teléfono.</p>
