@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Clima</title>
+  <meta name="description" content="Clima personal: pronóstico, satélite, radar, alertas del SMN y estado de rutas. Sin publicidad.">
+  <meta name="theme-color" content="#0f3b5f">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Clima">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <button id="placeBtn" class="place" aria-label="Cambiar ciudad">
+      <span class="pin" aria-hidden="true">📍</span>
+      <span id="placeName">Buscando ubicación…</span>
+      <span class="chev" aria-hidden="true">▾</span>
+    </button>
+    <button id="refreshBtn" class="icon-btn" aria-label="Actualizar">⟳</button>
+  </header>
+
+  <main>
+    <!-- HOY -->
+    <section id="tab-hoy" class="tab active" aria-label="Pronóstico">
+      <div id="alertBanner" class="alert-banner hidden"></div>
+
+      <div class="now card">
+        <div class="now-main">
+          <div id="nowIcon" class="now-icon">·</div>
+          <div>
+            <div id="nowTemp" class="now-temp">--°</div>
+            <div id="nowDesc" class="now-desc">Cargando…</div>
+          </div>
+        </div>
+        <div class="now-grid">
+          <div><span>Sensación</span><b id="nowFeels">--</b></div>
+          <div><span>Humedad</span><b id="nowHum">--</b></div>
+          <div><span>Viento</span><b id="nowWind">--</b></div>
+          <div><span>Ráfagas</span><b id="nowGust">--</b></div>
+          <div><span>Lluvia hoy</span><b id="nowRain">--</b></div>
+          <div><span>Sol</span><b id="nowSun">--</b></div>
+        </div>
+        <p id="updated" class="muted small"></p>
+      </div>
+
+      <h2>Próximas 24 horas</h2>
+      <div id="hourly" class="hourly" role="list"></div>
+
+      <h2>Próximos 7 días</h2>
+      <div id="daily" class="card daily" role="list"></div>
+    </section>
+
+    <!-- MAPA -->
+    <section id="tab-mapa" class="tab" aria-label="Mapa">
+      <div class="layer-bar" role="group" aria-label="Capas">
+        <button class="chip on" data-layer="geocolor">Satélite</button>
+        <button class="chip" data-layer="ir">Infrarrojo</button>
+        <button class="chip on" data-layer="radar">Radar</button>
+        <button class="chip on" data-layer="alerts">Alertas</button>
+      </div>
+      <div id="map"></div>
+      <div class="map-foot">
+        <button id="playBtn" class="chip">▶ Animar radar</button>
+        <span id="frameTime" class="muted small"></span>
+      </div>
+      <p class="muted small pad">Satélite GOES-Este (NASA), se actualiza cada ~10 min. El radar de RainViewer tiene cobertura parcial en Argentina y zoom máximo 7.</p>
+    </section>
+
+    <!-- ALERTAS -->
+    <section id="tab-alertas" class="tab" aria-label="Alertas">
+      <h2>Alertas del SMN en tu zona</h2>
+      <div id="alertsHere"></div>
+      <details class="card">
+        <summary>Otras alertas vigentes en el país <span id="alertsOtherCount" class="muted"></span></summary>
+        <div id="alertsOther"></div>
+      </details>
+      <p id="alertsUpdated" class="muted small pad"></p>
+    </section>
+
+    <!-- RUTAS -->
+    <section id="tab-rutas" class="tab" aria-label="Rutas">
+      <h2>Estado de rutas</h2>
+      <p class="muted pad">No hay un servicio público con los cortes en vivo, así que te dejamos los accesos oficiales y de consulta.</p>
+      <div class="links">
+        <a class="link-card" href="https://www.argentina.gob.ar/obras-publicas/vialidad-nacional" target="_blank" rel="noopener">
+          <b>Vialidad Nacional</b><span>Sitio oficial: estado de rutas nacionales y avisos</span>
+        </a>
+        <a class="link-card" href="https://www.ruta0.com/estado-de-rutas/" target="_blank" rel="noopener">
+          <b>Ruta0 · Estado de rutas</b><span>Novedades de transitabilidad de todo el país</span>
+        </a>
+        <a class="link-card" href="https://www.ruta0.com/estado-de-rutas/nea/" target="_blank" rel="noopener">
+          <b>Ruta0 · NEA</b><span>Misiones, Corrientes, Chaco y Formosa</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- CRÉDITOS -->
+    <footer class="credits">
+      <p><b>Datos:</b>
+        Pronóstico y ciudades: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0) ·
+        Satélite: <a href="https://earthdata.nasa.gov/gibs" target="_blank" rel="noopener">NASA GIBS</a> / GOES-Este ·
+        Radar: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a> ·
+        Alertas: <a href="https://www.smn.gob.ar/" target="_blank" rel="noopener">Servicio Meteorológico Nacional</a> ·
+        Mapa: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a> · <a href="https://leafletjs.com/" target="_blank" rel="noopener">Leaflet</a>.
+      </p>
+      <p>Sin publicidad ni rastreadores. Tu ubicación queda solo en este teléfono.</p>
+    </footer>
+  </main>
+
+  <nav class="tabs" aria-label="Secciones">
+    <button class="tab-btn active" data-tab="hoy"><span>☀️</span>Hoy</button>
+    <button class="tab-btn" data-tab="mapa"><span>🛰️</span>Mapa</button>
+    <button class="tab-btn" data-tab="alertas"><span>⚠️</span>Alertas<i id="alertDot" class="dot hidden"></i></button>
+    <button class="tab-btn" data-tab="rutas"><span>🛣️</span>Rutas</button>
+  </nav>
+
+  <!-- Buscar ciudad -->
+  <dialog id="placeDialog">
+    <form method="dialog" class="dlg">
+      <h3>Elegir ciudad</h3>
+      <input id="searchInput" type="search" placeholder="Escribí una ciudad (ej: Oberá)" autocomplete="off">
+      <ul id="results" class="results"></ul>
+      <button type="button" id="useGps" class="btn">📍 Usar mi ubicación</button>
+      <button value="cancel" class="btn ghost">Cerrar</button>
+    </form>
+  </dialog>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="app.js"></script>
+</body>
+</html>
