@@ -22,6 +22,7 @@
       <span class="chev" aria-hidden="true">▾</span>
     </button>
     <button id="refreshBtn" class="icon-btn" aria-label="Actualizar">⟳</button>
+    <button id="menuBtn" class="icon-btn" aria-label="Mi cuenta">👤</button>
   </header>
 
   <main>
@@ -94,6 +95,13 @@
       <p id="alertsUpdated" class="muted small pad"></p>
     </section>
 
+    <!-- REPORTES -->
+    <section id="tab-reportes" class="tab" aria-label="Reportes">
+      <h2>Reportes del grupo (últimas 24 h)</h2>
+      <p class="muted pad small">Fotos que comparten los integrantes: accidentes, lluvia, árboles caídos, caminos cortados… Se borran solos a las 24 horas.</p>
+      <div id="reportList"></div>
+    </section>
+
     <!-- RUTAS -->
     <section id="tab-rutas" class="tab" aria-label="Rutas">
       <h2>Estado de rutas</h2>
@@ -137,6 +145,7 @@
   <nav class="tabs" aria-label="Secciones">
     <button class="tab-btn active" data-tab="hoy"><span>☀️</span>Hoy</button>
     <button class="tab-btn" data-tab="mapa"><span>🛰️</span>Mapa</button>
+    <button class="tab-btn" data-tab="reportes"><span>📷</span>Reportes<i id="repDot" class="badge hidden"></i></button>
     <button class="tab-btn" data-tab="alertas"><span>⚠️</span>Alertas<i id="alertDot" class="dot hidden"></i></button>
     <button class="tab-btn" data-tab="rutas"><span>🛣️</span>Rutas</button>
   </nav>
@@ -153,7 +162,76 @@
     </form>
   </dialog>
 
+  <button id="fabReport" class="fab hidden" aria-label="Reportar">📷 Reportar</button>
+
+  <!-- Ingreso -->
+  <div id="gate" class="gate">
+    <div class="gate-box">
+      <img src="icons/icon-192.png" alt="" width="72" height="72">
+      <h1>Clima Corrientes</h1>
+      <div id="gateLogin" class="hidden">
+        <p class="muted">App privada. Ingresá con la cuenta que te invitaron.</p>
+        <button id="gGoogle" class="btn">Ingresar con Google</button>
+        <details class="mail">
+          <summary>Ingresar con correo y contraseña</summary>
+          <input id="gEmail" type="email" placeholder="Correo" autocomplete="email">
+          <input id="gPass" type="password" placeholder="Contraseña (mínimo 6)" autocomplete="current-password">
+          <button id="gLogin" class="btn">Ingresar</button>
+          <button id="gSignup" class="btn ghost">Crear mi contraseña</button>
+          <button id="gReset" class="btn ghost">Olvidé mi contraseña</button>
+        </details>
+      </div>
+      <div id="gateMsg" class="gate-msg">Cargando…</div>
+      <div id="gateActions" class="hidden">
+        <button id="gRetry" class="btn">Ya lo hice, reintentar</button>
+        <button id="gOut" class="btn ghost">Salir y usar otra cuenta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nuevo reporte -->
+  <dialog id="reportDialog">
+    <form method="dialog" class="dlg">
+      <h3>Nuevo reporte</h3>
+      <div id="rTypes" class="towns"></div>
+      <label class="photo-pick">
+        <input id="rPhoto" type="file" accept="image/*" capture="environment" hidden>
+        <img id="rPreview" alt="" class="hidden">
+        <span id="rPhotoTxt">📷 Sacar foto</span>
+      </label>
+      <textarea id="rNote" maxlength="280" rows="2" placeholder="Comentario (opcional): «árbol sobre la ruta 14 km 820»"></textarea>
+      <p id="rLoc" class="muted small">Buscando tu ubicación…</p>
+      <button type="button" id="rSend" class="btn">Enviar reporte</button>
+      <button value="cancel" class="btn ghost">Cancelar</button>
+    </form>
+  </dialog>
+
+  <!-- Cuenta y administración -->
+  <dialog id="adminDialog">
+    <form method="dialog" class="dlg">
+      <h3 id="whoTitle">Mi cuenta</h3>
+      <p id="whoMail" class="muted small"></p>
+      <div id="adminBox" class="hidden">
+        <h4>Invitados</h4>
+        <div class="row2">
+          <input id="mEmail" type="email" placeholder="correo@gmail.com">
+          <input id="mName" type="text" placeholder="Nombre">
+        </div>
+        <button type="button" id="mAdd" class="btn">Invitar</button>
+        <ul id="mList" class="mlist"></ul>
+        <h4>Predios</h4>
+        <p id="pInfo" class="muted small"></p>
+        <label class="btn ghost file-btn">📁 Subir KML o KMZ de predios<input id="pFile" type="file" accept=".kml,.kmz,.json,application/vnd.google-earth.kmz,application/vnd.google-earth.kml+xml" hidden></label>
+        <p id="pStatus" class="small"></p>
+      </div>
+      <button type="button" id="logoutBtn" class="btn ghost">Cerrar sesión</button>
+      <button value="cancel" class="btn ghost">Cerrar</button>
+    </form>
+  </dialog>
+
+  <script type="module" src="firebase.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="app.js"></script>
+  <script src="privado.js"></script>
 </body>
 </html>

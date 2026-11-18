@@ -27,7 +27,7 @@ jobs:
       - name: Armar el sitio
         run: |
           mkdir _site
-          cp -r index.html styles.css app.js sw.js manifest.webmanifest icons predios.json _site/
+          cp -r index.html styles.css app.js privado.js firebase.js sw.js manifest.webmanifest icons _site/
           cp alerts.json _site/alerts.json
           touch _site/.nojekyll
       - name: Alertas del SMN

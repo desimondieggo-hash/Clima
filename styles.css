@@ -169,3 +169,43 @@ dialog::backdrop { background: rgba(0,0,0,.45); }
 .mdays { display: flex; gap: 4px; overflow-x: auto; }
 .mday { flex: 0 0 auto; min-width: 40px; text-align: center; font-size: 11.5px; color: var(--muted); text-transform: capitalize; }
 .mday i { display: block; font-style: normal; font-size: 16px; }
+
+.tabs { grid-template-columns: repeat(5, 1fr); }
+.tab-btn { font-size: 11.5px; }
+.badge { position: absolute; top: 6px; right: calc(50% - 26px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--rojo); color: #fff; font-size: 11px; font-style: normal; font-weight: 800; line-height: 18px; }
+.fab { position: fixed; right: 16px; bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom)); z-index: 1001; border: 0; border-radius: 999px; padding: 14px 18px; font-size: 16px; font-weight: 800; background: var(--accent); color: #fff; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+@media (prefers-color-scheme: dark) { .fab { color: #0d1720; } }
+.gate { position: fixed; inset: 0; z-index: 3000; background: var(--accent); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.gate.hidden { display: none; }
+.gate-box { background: var(--card); color: var(--text); border-radius: 20px; padding: 24px; width: min(420px, 100%); display: grid; gap: 12px; text-align: center; }
+.gate-box img { margin: 0 auto; border-radius: 16px; }
+.gate-box h1 { margin: 0; font-size: 22px; }
+.gate-box input, .dlg input, .dlg textarea { width: 100%; font-size: 16px; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font-family: inherit; }
+.mail { text-align: left; display: grid; gap: 8px; }
+.mail[open] { display: grid; }
+.mail summary { cursor: pointer; color: var(--muted); font-size: 14px; margin: 4px 0; }
+.mail > * + * { margin-top: 8px; }
+.gate-msg { font-size: 14.5px; }
+.gate-msg:empty { display: none; }
+#gateActions { display: grid; gap: 8px; }
+#gateActions.hidden, #gateLogin.hidden { display: none; }
+.photo-pick { display: flex; align-items: center; justify-content: center; min-height: 140px; border: 2px dashed var(--line); border-radius: 14px; cursor: pointer; overflow: hidden; font-weight: 700; color: var(--accent-2); }
+.photo-pick img { width: 100%; max-height: 40vh; object-fit: cover; }
+.row2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; }
+.mlist { list-style: none; margin: 0; padding: 0; max-height: 30vh; overflow-y: auto; }
+.mlist li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.mlist li small { display: block; color: var(--muted); }
+.mlist button { border: 0; background: none; color: var(--rojo); font-weight: 700; font-size: 13px; }
+.dlg h4 { margin: 10px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.file-btn { display: block; text-align: center; border: 1px solid var(--line); }
+.rep { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: start; }
+.rep img { width: 96px; height: 96px; object-fit: cover; border-radius: 12px; background: var(--bg); cursor: zoom-in; }
+.rep h3 { margin: 0 0 2px; font-size: 16px; }
+.rep p { margin: 2px 0; font-size: 13.5px; }
+.rep .acts { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.rep .acts button { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 999px; padding: 5px 10px; font-size: 13px; font-weight: 600; }
+.rep .acts .del { color: var(--rojo); }
+.rep-pop img { width: 220px; max-width: 60vw; border-radius: 10px; display: block; margin-top: 6px; }
+.rep-icon { font-size: 22px; line-height: 30px; text-align: center; background: #fff; border-radius: 50%; border: 2px solid var(--accent); box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+.photo-full { position: fixed; inset: 0; z-index: 4000; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center; }
+.photo-full img { max-width: 100%; max-height: 100%; }

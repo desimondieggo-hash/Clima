@@ -53,6 +53,7 @@ function showTab(name) {
   document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.id === `tab-${name}`));
   if (name === "mapa") initMap();
+  if (window.onTab) window.onTab(name);
   window.scrollTo({ top: 0 });
 }
 
@@ -344,7 +345,8 @@ function onlyCorrientes(list) {
 // ---------------------------------------------------------------- Predios
 let predios = [];          // [{n, ha, p: [[[lat,lon],...] (anillos)] por polígono]}
 async function loadPredios() {
-  try { predios = await (await fetch("predios.json")).json(); } catch { predios = []; }
+  // Los predios son privados: vienen de la base de Firebase y solo los ven los invitados.
+  try { predios = window.FB ? await window.FB.loadPredios() : []; } catch { predios = []; }
   drawPredios();
 }
 /** Predios con algún vértice dentro de los polígonos de un aviso. */
@@ -451,6 +453,7 @@ function initMap() {
   $("playBtn").addEventListener("click", toggleRadarAnimation);
   $("satPlayBtn").addEventListener("click", toggleSatAnimation);
   $("prediosBtn").addEventListener("click", verPredios);
+  if (window.onMapReady) window.onMapReady(map);
   map.on("zoomend", updatePredioLabels);
 }
 
@@ -630,7 +633,11 @@ async function loadAll(force = false) {
 $("refreshBtn").addEventListener("click", () => loadAll(true));
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") loadAll(); });
 
-(async function start() {
+let booted = false;
+/** Arranca la app cuando el usuario ya ingresó (lo llama privado.js). */
+async function bootApp() {
+  if (booted) return;
+  booted = true;
   if (!place) {
     $("placeName").textContent = "Buscando ubicación…";
     place = (await locate()) || DEFAULT_PLACE;
@@ -638,7 +645,7 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
   }
   $("placeName").textContent = placeLabel(place);
   loadAll(true);
-})();
+}
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

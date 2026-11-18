@@ -1,7 +1,7 @@
 /* Service worker: guarda la app para abrirla sin señal.
    El pronóstico y las alertas van siempre primero a la red; si no hay, usa lo último guardado. */
-const VERSION = "clima-v6";
-const SHELL = ["./", "index.html", "styles.css", "app.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png",
+const VERSION = "clima-v7";
+const SHELL = ["./", "index.html", "styles.css", "app.js", "privado.js", "firebase.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png",
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css", "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"];
 
 self.addEventListener("install", (e) => {
@@ -23,7 +23,9 @@ self.addEventListener("fetch", (e) => {
       .catch(() => caches.match(req, { ignoreSearch: url.pathname.endsWith("alerts.json") })));
     return;
   }
-  if (sameOrigin || url.host === "unpkg.com") {
+  // La base de Firebase y el ingreso manejan su propia red: no se tocan.
+  if (/googleapis\.com|firebaseapp\.com|firebaseio\.com/.test(url.host)) return;
+  if (sameOrigin || url.host === "unpkg.com" || (url.host === "www.gstatic.com" && url.pathname.startsWith("/firebasejs/"))) {
     // App: lo guardado al instante y se actualiza por detrás.
     e.respondWith(caches.match(req).then((hit) => {
       const net = fetch(req).then((res) => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); } return res; }).catch(() => hit);

@@ -1,0 +1,54 @@
+rules_version = '2';
+
+// Clima Corrientes: solo entran los invitados. El administrador es el único que
+// invita gente, sube los predios y puede borrar cualquier reporte.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email != null
+        && request.auth.token.email_verified == true;
+    }
+    function email() { return request.auth.token.email.lower(); }
+    function isAdmin() { return signedIn() && email() == 'desimon.dieggo@gmail.com'; }
+    function isMember() {
+      return isAdmin() || (signedIn() && exists(/databases/$(database)/documents/miembros/$(email())));
+    }
+
+    // Lista de invitados (el id del documento es el correo en minúsculas)
+    match /miembros/{em} {
+      allow read: if isAdmin() || (signedIn() && em == email());
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['nombre', 'agregado'])
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 80;
+      allow delete: if isAdmin();
+    }
+
+    // Predios: el contorno se guarda en partes de texto (cada documento tiene un límite de 1 MB)
+    match /predios/{part} {
+      allow read: if isMember();
+      allow write: if isAdmin();
+    }
+
+    // Reportes con foto: duran 24 h. Cada uno borra los suyos; el administrador, cualquiera.
+    match /reportes/{id} {
+      allow read: if isMember();
+      allow create: if isMember()
+        && request.resource.data.keys().hasOnly(['tipo', 'nota', 'lat', 'lon', 'foto', 'autor', 'uid', 'creado', 'expira'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.tipo is string && request.resource.data.tipo.size() <= 30
+        && request.resource.data.nota is string && request.resource.data.nota.size() <= 280
+        && request.resource.data.autor is string && request.resource.data.autor.size() <= 80
+        && request.resource.data.lat is number && request.resource.data.lon is number
+        && request.resource.data.foto is string && request.resource.data.foto.size() < 450000
+        && request.resource.data.creado == request.time
+        && request.resource.data.expira is timestamp
+        && request.resource.data.expira <= request.time + duration.value(25, 'h');
+      allow delete: if isAdmin() || (isMember() && resource.data.uid == request.auth.uid);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

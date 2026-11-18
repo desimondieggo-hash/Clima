@@ -9,6 +9,13 @@ Web-app del clima personal, sin publicidad ni rastreadores. Se instala en el cel
 - **Mapa:** © OpenStreetMap, Leaflet.
 - **Rutas:** enlaces a Vialidad Nacional y Ruta0.
 
+## Parte privada
+
+El ingreso, los predios y los reportes con foto usan Firebase (proyecto `clima-corrientes`):
+solo entran los correos invitados por el administrador. Las reglas están en `firestore.rules`
+y se publican desde la consola de Firebase. Los predios **no** están en este repositorio:
+el administrador los sube desde la app (Cuenta → Predios → KML/KMZ).
+
 ## Cómo funciona
 
 Es una página estática publicada en GitHub Pages. La tarea `Publicar` (`.github/workflows/publicar.yml`)
