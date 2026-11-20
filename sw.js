@@ -1,6 +1,6 @@
 /* Service worker: guarda la app para abrirla sin señal.
    El pronóstico y las alertas van siempre primero a la red; si no hay, usa lo último guardado. */
-const VERSION = "clima-v9";
+const VERSION = "clima-v10";
 const SHELL = ["./", "index.html", "styles.css", "app.js", "privado.js", "firebase.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png",
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css", "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"];
 

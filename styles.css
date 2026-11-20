@@ -213,3 +213,25 @@ dialog::backdrop { background: rgba(0,0,0,.45); }
 .mlist .wa-btn { background: #25d366; color: #fff; font-weight: 700; font-size: 13px; padding: 6px 10px; border-radius: 999px; text-decoration: none; white-space: nowrap; }
 .mlist li.just-added { background: rgba(37, 211, 102, .12); }
 #shareBtn { margin: 4px 0 12px; }
+
+/* ---- Gráficos de pronóstico */
+.chart-card { padding: 10px 8px 8px; }
+.week-chart svg, .hour-scroll svg { display: block; }
+.week-chart svg { width: 100%; height: auto; }
+.hour-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+.c-max { stroke: #e8743b; fill: none; stroke-width: 2.5; } .t-max { fill: #e8743b; }
+.c-min { stroke: #3b8fd9; fill: none; stroke-width: 2.5; } .t-min { fill: #3b8fd9; }
+.c-temp { stroke: #e8743b; fill: none; stroke-width: 2.5; stroke-linejoin: round; }
+.b-mm { fill: var(--rain); } .t-mm { fill: var(--rain); font-weight: 700; }
+.c-pp { stroke: #8a6ad6; fill: none; stroke-width: 1.8; stroke-dasharray: 4 3; } .t-pp { fill: #8a6ad6; }
+.b-ppa { fill: #8a6ad6; opacity: .16; }
+.t-lbl { fill: var(--text); font-weight: 700; } .t-mut { fill: var(--muted); }
+.g-line { stroke: var(--line); } .g-now { stroke: var(--accent-2); stroke-width: 2; }
+.d-hit { fill: transparent; cursor: pointer; } .d-sel { fill: var(--accent-2); opacity: .12; }
+.h-sel { fill: var(--text); opacity: .08; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); margin: 6px 6px 0; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.lg-max::before, .lg-temp::before { background: #e8743b; } .lg-min::before { background: #3b8fd9; }
+.lg-mm::before { background: var(--rain); } .lg-pp::before { background: #8a6ad6; } .lg-ppa::before { background: #8a6ad6; opacity: .3; }
+.chart-card .small { margin: 4px 6px 0; }
+.hour-info { margin: 6px 6px 0; font-size: 14px; min-height: 20px; }

@@ -54,11 +54,19 @@
       <h2>Monte</h2>
       <div id="monte" class="card monte"><p class="muted small">Calculando…</p></div>
 
-      <h2>Próximas 24 horas</h2>
-      <div id="hourly" class="hourly" role="list"></div>
-
       <h2>Próximos 7 días</h2>
-      <div id="daily" class="card daily" role="list"></div>
+      <div class="card chart-card">
+        <div id="weekChart" class="week-chart"></div>
+        <div class="legend"><span class="lg-max">Máxima</span><span class="lg-min">Mínima</span><span class="lg-mm">Lluvia mm</span><span class="lg-pp">Prob. %</span></div>
+        <p class="muted small">Tocá un día para verlo hora por hora.</p>
+      </div>
+
+      <h2 id="hourTitle">Próximas 48 horas</h2>
+      <div class="card chart-card">
+        <div id="hourScroll" class="hour-scroll"><div id="hourChart"></div></div>
+        <p id="hourInfo" class="hour-info"></p>
+        <div class="legend"><span class="lg-temp">Temperatura</span><span class="lg-mm">Lluvia mm/h</span><span class="lg-ppa">Prob. %</span></div>
+      </div>
     </section>
 
     <!-- MAPA -->

@@ -171,42 +171,128 @@ function renderForecast(d, at, offline = false) {
   $("nowSun").textContent = `${hhmm(dl.sunrise[0])} – ${hhmm(dl.sunset[0])}`;
   $("updated").textContent = `${offline ? "Sin conexión: datos guardados de las " : "Actualizado "}${new Date(at).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`;
 
-  // 24 horas desde la hora actual del lugar
-  const nowKey = c.time.slice(0, 13);
-  let start = h.time.findIndex((t) => t.slice(0, 13) >= nowKey);
-  if (start < 0) start = 0;
-  const hb = $("hourly");
-  hb.innerHTML = "";
-  for (let i = start; i < Math.min(start + 24, h.time.length); i++) {
-    const p = h.precipitation_probability[i];
-    const el = document.createElement("div");
-    el.className = "hour" + (i === start ? " now-h" : "");
-    el.setAttribute("role", "listitem");
-    el.innerHTML = `<div class="h">${i === start ? "Ahora" : hhmm(h.time[i])}</div>
-      <div class="i" title="${esc(wmoText(h.weather_code[i]))}">${wmoIcon(h.weather_code[i], h.is_day[i])}</div>
-      <div class="t">${fmtTemp(h.temperature_2m[i])}</div>
-      <div class="p">${p ? `💧${p}%` : ""}</div>`;
-    hb.appendChild(el);
-  }
+  fc = { d, h, dl, start: hourIndex(h, c.time) };
+  selDay = null;
+  drawWeek();
+  drawHours();
+}
 
-  // 7 días con barra de mínima a máxima
-  const lo = Math.min(...dl.temperature_2m_min), hi = Math.max(...dl.temperature_2m_max), span = Math.max(1, hi - lo);
-  const db = $("daily");
-  db.innerHTML = "";
+// ---------------------------------------------------------------- Gráficos: semana (tocás un día) y hora por hora
+let fc = null, selDay = null;
+const SVGNS = "http://www.w3.org/2000/svg";
+function sv(parent, tag, attrs, text) {
+  const e = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  parent.appendChild(e);
+  return e;
+}
+const linePath = (pts) => pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
+function hourIndex(h, iso) {
+  const k = iso.slice(0, 13);
+  const i = h.time.findIndex((t) => t.slice(0, 13) >= k);
+  return i < 0 ? 0 : i;
+}
+const chartDay = (iso, i) => i === 0 ? ["Hoy", ""] : (() => {
+  const dt = new Date(iso + "T12:00");
+  const w = dt.toLocaleDateString("es-AR", { weekday: "short" }).replace(".", "");
+  return [w.charAt(0).toUpperCase() + w.slice(1, 3), String(dt.getDate())];
+})();
+const mmTxt = (v) => v >= 10 ? Math.round(v) : v.toFixed(1);
+
+function drawWeek() {
+  const box = $("weekChart");
+  box.innerHTML = "";
+  if (!fc) return;
+  const { dl } = fc, n = dl.time.length, W = 340, H = 254, cw = W / n;
+  const s = sv(box, "svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Pronóstico de 7 días" });
+  const mx = dl.temperature_2m_max, mn = dl.temperature_2m_min, mm = dl.precipitation_sum.map((v) => v || 0), pp = dl.precipitation_probability_max.map((v) => v || 0);
+  const hi = Math.max(...mx), lo = Math.min(...mn), span = Math.max(4, hi - lo);
+  const ty = (t) => 50 + ((hi - t) / span) * 62;              // 50..112
+  const mmMax = Math.max(15, ...mm), ry = (v) => 200 - (v / mmMax) * 50; // barras 150..200
+  const py = (v) => 200 - v * 0.5;
+  const cx = (i) => cw * i + cw / 2;
+  if (selDay != null) sv(s, "rect", { class: "d-sel", x: cw * selDay + 1, y: 0, width: cw - 2, height: H, rx: 8 });
+  for (let i = 1; i < n; i++) sv(s, "line", { class: "g-line", x1: cw * i, x2: cw * i, y1: 8, y2: 204 });
+  sv(s, "line", { class: "g-line", x1: 0, x2: W, y1: 200.5, y2: 200.5 });
   dl.time.forEach((t, i) => {
-    const mn = dl.temperature_2m_min[i], mx = dl.temperature_2m_max[i], p = dl.precipitation_probability_max[i];
-    const el = document.createElement("div");
-    el.className = "day";
-    el.setAttribute("role", "listitem");
-    el.title = `${wmoText(dl.weather_code[i])} · lluvia ${p ?? 0}% (${(dl.precipitation_sum[i] ?? 0).toFixed(1)} mm) · ráfagas ${Math.round(dl.wind_gusts_10m_max[i])} km/h`;
-    el.innerHTML = `<div class="n">${dayName(t, i)}</div>
-      <div class="i">${wmoIcon(dl.weather_code[i])}</div>
-      <div class="p">${p ? `💧${p}%` : ""}</div>
-      <div class="bar"><i style="left:${((mn - lo) / span) * 100}%;right:${100 - ((mx - lo) / span) * 100}%"></i></div>
-      <div class="mn">${fmtTemp(mn)}</div>
-      <div class="mx">${fmtTemp(mx)}</div>`;
-    db.appendChild(el);
+    sv(s, "text", { x: cx(i), y: 22, "text-anchor": "middle", "font-size": 17 }, wmoIcon(dl.weather_code[i]));
+    if (mm[i] > 0.05) {
+      sv(s, "rect", { class: "b-mm", x: cx(i) - 11, y: ry(mm[i]), width: 22, height: Math.max(2, 200 - ry(mm[i])), rx: 3 });
+      sv(s, "text", { class: "t-mm", x: cx(i), y: ry(mm[i]) - 4, "text-anchor": "middle", "font-size": 11 }, mmTxt(mm[i]));
+    }
+    const [a, b] = chartDay(t, i);
+    sv(s, "text", { class: "t-lbl", x: cx(i), y: 232, "text-anchor": "middle", "font-size": 12 }, a);
+    if (b) sv(s, "text", { class: "t-mut", x: cx(i), y: 246, "text-anchor": "middle", "font-size": 11 }, b);
+    sv(s, "text", { class: "t-pp", x: cx(i), y: 214, "text-anchor": "middle", "font-size": 10, "font-weight": 700 }, pp[i] ? `${pp[i]}%` : "");
+    sv(s, "text", { class: "t-max", x: cx(i), y: ty(mx[i]) - 7, "text-anchor": "middle", "font-size": 11, "font-weight": 700 }, fmtTemp(mx[i]));
+    sv(s, "text", { class: "t-min", x: cx(i), y: ty(mn[i]) + 15, "text-anchor": "middle", "font-size": 11, "font-weight": 700 }, fmtTemp(mn[i]));
   });
+  sv(s, "path", { class: "c-pp", d: linePath(pp.map((v, i) => [cx(i), py(v)])) });
+  sv(s, "path", { class: "c-max", d: linePath(mx.map((v, i) => [cx(i), ty(v)])) });
+  sv(s, "path", { class: "c-min", d: linePath(mn.map((v, i) => [cx(i), ty(v)])) });
+  dl.time.forEach((t, i) => {
+    const r = sv(s, "rect", { class: "d-hit", x: cw * i, y: 0, width: cw, height: H });
+    sv(r, "title", {}, `${dayName(t, i)}: ${wmoText(dl.weather_code[i])}, ${fmtTemp(mn[i])} a ${fmtTemp(mx[i])}, lluvia ${pp[i]}% (${mm[i].toFixed(1)} mm), ráfagas ${Math.round(dl.wind_gusts_10m_max[i])} km/h`);
+    r.addEventListener("click", () => { selDay = selDay === i ? null : i; drawWeek(); drawHours(); });
+  });
+}
+
+function drawHours() {
+  const box = $("hourChart");
+  box.innerHTML = "";
+  if (!fc) return;
+  const { h, dl } = fc;
+  let from = fc.start, count = 48;
+  if (selDay != null) {
+    from = Math.max(0, h.time.findIndex((t) => t.startsWith(dl.time[selDay])));
+    count = 24;
+    $("hourTitle").textContent = `${dayName(dl.time[selDay], selDay)} hora por hora`;
+  } else $("hourTitle").textContent = "Próximas 48 horas";
+  const idx = [];
+  for (let i = from; i < Math.min(from + count, h.time.length); i++) idx.push(i);
+  if (!idx.length) return;
+  const dx = 24, W = idx.length * dx + 8, H = 230, x = (k) => 4 + k * dx + dx / 2;
+  const T = idx.map((i) => h.temperature_2m[i]), R = idx.map((i) => h.precipitation[i] || 0), P = idx.map((i) => h.precipitation_probability[i] || 0);
+  const hi = Math.max(...T), lo = Math.min(...T), span = Math.max(4, hi - lo);
+  const ty = (t) => 46 + ((hi - t) / span) * 80;                     // 46..126
+  const rMax = Math.max(4, ...R), ry = (v) => 200 - (v / rMax) * 52;  // 148..200
+  const s = sv(box, "svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Pronóstico hora por hora" });
+  const sel = sv(s, "rect", { class: "h-sel", x: -100, y: 0, width: dx, height: H });
+  P.forEach((p, k) => p && sv(s, "rect", { class: "b-ppa", x: 4 + k * dx, y: 200 - p * 0.95, width: dx, height: p * 0.95 }));
+  sv(s, "line", { class: "g-line", x1: 0, x2: W, y1: 200.5, y2: 200.5 });
+  idx.forEach((i, k) => {
+    const hr = Number(h.time[i].slice(11, 13));
+    if (hr === 0 && k > 0) {
+      sv(s, "line", { class: "g-line", x1: 4 + k * dx, x2: 4 + k * dx, y1: 4, y2: 204 });
+      const d = dl.time.indexOf(h.time[i].slice(0, 10));
+      sv(s, "text", { class: "t-lbl", x: 8 + k * dx, y: 14, "font-size": 11 }, d >= 0 ? dayName(dl.time[d], d) : "");
+    }
+    if (R[k] > 0.05) {
+      sv(s, "rect", { class: "b-mm", x: 4 + k * dx + 3, y: ry(R[k]), width: dx - 6, height: Math.max(2, 200 - ry(R[k])), rx: 2 });
+      if (R[k] >= 1) sv(s, "text", { class: "t-mm", x: x(k), y: ry(R[k]) - 3, "text-anchor": "middle", "font-size": 10 }, mmTxt(R[k]));
+    }
+    if (k % 3 === 0) {
+      sv(s, "text", { x: x(k), y: 32, "text-anchor": "middle", "font-size": 15 }, wmoIcon(h.weather_code[i], h.is_day[i]));
+      sv(s, "text", { class: "t-max", x: x(k), y: ty(T[k]) - 7, "text-anchor": "middle", "font-size": 11, "font-weight": 700 }, fmtTemp(T[k]));
+      sv(s, "text", { class: "t-mut", x: x(k), y: 216, "text-anchor": "middle", "font-size": 11 }, i === fc.start ? "Ahora" : `${String(hr).padStart(2, "0")}h`);
+    }
+  });
+  sv(s, "path", { class: "c-temp", d: linePath(T.map((t, k) => [x(k), ty(t)])) });
+  if (selDay == null || idx.includes(fc.start)) {
+    const k = idx.indexOf(fc.start);
+    if (k >= 0) sv(s, "line", { class: "g-now", x1: x(k), x2: x(k), y1: 38, y2: 204 });
+  }
+  const info = (k) => {
+    const i = idx[k];
+    sel.setAttribute("x", 4 + k * dx);
+    $("hourInfo").innerHTML = `<b>${dayName(h.time[i].slice(0, 10), dl.time.indexOf(h.time[i].slice(0, 10)))} ${hhmm(h.time[i])}</b> · ${wmoIcon(h.weather_code[i], h.is_day[i])} ${esc(wmoText(h.weather_code[i]))} · ${fmtTemp(T[k])} · 💧 ${P[k]}% · ${R[k].toFixed(1)} mm`;
+  };
+  idx.forEach((i, k) => sv(s, "rect", { class: "d-hit", x: 4 + k * dx, y: 0, width: dx, height: H }).addEventListener("click", () => info(k)));
+  // Arranca mostrando la hora actual (o el mediodía del día elegido).
+  const first = selDay == null ? 0 : Math.min(idx.length - 1, 12);
+  info(selDay == null ? 0 : first);
+  $("hourScroll").scrollLeft = selDay == null ? 0 : Math.max(0, x(6) - 20);
 }
 
 // ---------------------------------------------------------------- Monte: caminos y riesgo de incendio (estimados)
@@ -248,7 +334,7 @@ function renderMonte(all, today) {
   if (!all.et0_fao_evapotranspiration) return;
   const road = roadStatus(all), fire = fireRisk(all);
   const days = all.time.slice(today, today + 7);
-  const dots = (arr) => days.map((t, i) => `<span class="mday" title="${esc(arr[today + i].txt)}"><i>${LEVELS[arr[today + i].lv].dot}</i>${shortDay(t, i)}</span>`).join("");
+  const dots = (arr) => days.map((t, i) => `<span class="mday" title="${esc(arr[today + i].txt)}"><i>${LEVELS[arr[today + i].lv].dot}</i>${chartDay(t, i)}</span>`).join("");
   const rain3 = all.precipitation_sum.slice(Math.max(0, today - 3), today).reduce((a, b) => a + (b || 0), 0);
   const dry = (() => { let n = 0; for (let i = today - 1; i >= 0 && (all.precipitation_sum[i] ?? 0) < 2; i--) n++; return n; })();
   $("monte").innerHTML = `
