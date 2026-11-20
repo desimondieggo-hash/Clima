@@ -261,12 +261,14 @@ function inviteText(nombre, email) {
   const hola = nombre ? `Hola ${nombre.split(" ")[0]}!` : "Hola!";
   return `${hola} Te invité a *Clima Corrientes*, la app del clima para el monte: pronóstico, radar, alertas del SMN, riesgo de incendio y reportes con foto de los predios.\n\n` +
     `1. Abrí este link en el celular: ${APP_URL}\n` +
-    `2. Entrá con Google usando *${email}* (o creá usuario con ese mismo correo y confirmalo desde el mail).\n` +
+    (/@(gmail|googlemail)\.com$/i.test(email)
+      ? `2. Tocá "Ingresar con Google" y elegí *${email}*.\n`
+      : `2. Tocá "Ingresar con correo y contraseña", poné *${email}* y una contraseña que elijas, y tocá *Crear mi contraseña*. Te llega un mail para confirmar: tocá el link y volvé a la app (revisá spam si no aparece).\n`) +
     `3. Para tenerla como app: menú del navegador ⋮ → "Agregar a pantalla de inicio" (en iPhone: Compartir → "Agregar a inicio").`;
 }
 function shareText() {
   return `Te paso *Clima Corrientes*, la app del clima para el monte: ${APP_URL}\n` +
-    `Es privada: para entrar, pedile a Diego que te invite con tu correo de Gmail.`;
+    `Es privada: para entrar, pedile a Diego que te invite con tu correo (sirve cualquiera: Gmail, Hotmail, Yahoo, el de la empresa).`;
 }
 $("shareBtn").addEventListener("click", async () => {
   const text = shareText();
