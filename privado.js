@@ -259,7 +259,7 @@ let lastInvited = "";
 const waLink = (t) => "https://wa.me/?text=" + encodeURIComponent(t);
 function inviteText(nombre, email) {
   const hola = nombre ? `Hola ${nombre.split(" ")[0]}!` : "Hola!";
-  return `${hola} Te invité a *Clima Corrientes*, la app del clima para el monte: pronóstico, radar, alertas del SMN, estado de caminos y reportes con foto de los predios.\n\n` +
+  return `${hola} Te invité a *Clima Corrientes*, la app del clima para el monte: pronóstico, radar, alertas del SMN, riesgo de incendio y reportes con foto de los predios.\n\n` +
     `1. Abrí este link en el celular: ${APP_URL}\n` +
     `2. Entrá con Google usando *${email}* (o creá usuario con ese mismo correo y confirmalo desde el mail).\n` +
     `3. Para tenerla como app: menú del navegador ⋮ → "Agregar a pantalla de inicio" (en iPhone: Compartir → "Agregar a inicio").`;

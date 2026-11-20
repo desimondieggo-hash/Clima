@@ -138,7 +138,7 @@ async function loadForecast() {
     latitude: place.lat, longitude: place.lon, timezone: "auto", forecast_days: "7", past_days: "10", wind_speed_unit: "kmh",
     current: "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,is_day",
     hourly: "temperature_2m,precipitation_probability,precipitation,weather_code,is_day",
-    daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_gusts_10m_max,sunrise,sunset,et0_fao_evapotranspiration,relative_humidity_2m_min",
+    daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_gusts_10m_max,sunrise,sunset,relative_humidity_2m_min",
   });
   try {
     const r = await fetch(url);
@@ -295,24 +295,12 @@ function drawHours() {
   $("hourScroll").scrollLeft = selDay == null ? 0 : Math.max(0, x(6) - 20);
 }
 
-// ---------------------------------------------------------------- Monte: caminos y riesgo de incendio (estimados)
+// ---------------------------------------------------------------- Monte: riesgo de incendio (estimado) y focos
 const LEVELS = {
   verde: { cls: "lv-verde", dot: "🟢" }, amarillo: { cls: "lv-amarillo", dot: "🟡" },
   naranja: { cls: "lv-naranja", dot: "🟠" }, rojo: { cls: "lv-rojo", dot: "🔴" },
 };
 const shortDay = (iso, i) => i === 0 ? "Hoy" : new Date(iso + "T12:00").toLocaleDateString("es-AR", { weekday: "short" }).replace(".", "");
-
-/** Caminos de tierra: «balde» de agua que se llena con la lluvia y se vacía con el sol y el viento (evapotranspiración). */
-function roadStatus(all) {
-  const rain = all.precipitation_sum, et0 = all.et0_fao_evapotranspiration;
-  const out = [];
-  let w = 0;
-  for (let i = 0; i < all.time.length; i++) {
-    w = Math.max(0, w * 0.75 - (et0[i] ?? 4) * 0.5) + (rain[i] ?? 0);
-    out.push(w >= 20 ? { lv: "rojo", txt: "Barro: mejor no entrar" } : w >= 7 ? { lv: "amarillo", txt: "Húmedos: con precaución" } : { lv: "verde", txt: "Transitables" });
-  }
-  return out;
-}
 
 /** Riesgo de incendio: suma puntos por calor, aire seco, ráfagas y días sin lluvia. Estimación, no es el índice oficial. */
 function fireRisk(all) {
@@ -331,15 +319,12 @@ function fireRisk(all) {
 }
 
 function renderMonte(all, today) {
-  if (!all.et0_fao_evapotranspiration) return;
-  const road = roadStatus(all), fire = fireRisk(all);
+  if (!all.relative_humidity_2m_min) return;
+  const fire = fireRisk(all);
   const days = all.time.slice(today, today + 7);
-  const dots = (arr) => days.map((t, i) => `<span class="mday" title="${esc(arr[today + i].txt)}"><i>${LEVELS[arr[today + i].lv].dot}</i>${chartDay(t, i)}</span>`).join("");
-  const rain3 = all.precipitation_sum.slice(Math.max(0, today - 3), today).reduce((a, b) => a + (b || 0), 0);
+  const dots = (arr) => days.map((t, i) => `<span class="mday" title="${esc(arr[today + i].txt)}"><i>${LEVELS[arr[today + i].lv].dot}</i>${shortDay(t, i)}</span>`).join("");
   const dry = (() => { let n = 0; for (let i = today - 1; i >= 0 && (all.precipitation_sum[i] ?? 0) < 2; i--) n++; return n; })();
   $("monte").innerHTML = `
-    <div class="mrow"><div><b>Caminos de tierra</b> <span class="pill ${LEVELS[road[today].lv].cls}">${esc(road[today].txt)}</span>
-      <p class="muted small">Llovió ${rain3.toFixed(0)} mm en los últimos 3 días.</p></div><div class="mdays">${dots(road)}</div></div>
     <div class="mrow"><div><b>Riesgo de incendio</b> <span class="pill ${LEVELS[fire[today].lv].cls}">${esc(fire[today].txt)}</span>
       <p class="muted small">${dry ? `${dry} día(s) sin lluvia.` : "Llovió ayer."} Estimación con temperatura, humedad, ráfagas y días secos.</p></div><div class="mdays">${dots(fire)}</div></div>
     <div class="mrow" id="firesRow"></div>`;
