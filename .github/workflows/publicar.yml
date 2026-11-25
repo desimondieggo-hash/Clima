@@ -37,7 +37,7 @@ jobs:
       - name: Última imagen de satélite
         run: python3 scripts/gibs_times.py _site/gibs.json || echo "{}" > _site/gibs.json
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
       - id: deploy
