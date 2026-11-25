@@ -90,6 +90,24 @@
       <p class="muted small pad">Satélite GOES-Este (NASA), se actualiza cada ~10 min. El radar de RainViewer tiene cobertura parcial en Argentina y zoom máximo 7.</p>
     </section>
 
+    <!-- CAMPO -->
+    <section id="tab-campo" class="tab campo" aria-label="Campo">
+      <div id="campoMap"></div>
+      <div id="cStatus" class="c-status">Abriendo GPS…</div>
+      <div class="c-side">
+        <button type="button" id="cFollow" class="c-fab on" aria-label="Centrar en mi posición">🎯</button>
+        <button type="button" id="cBase" class="c-fab" aria-label="Cambiar fondo">🛰️</button>
+        <button type="button" id="cDatos" class="c-fab" aria-label="Lo guardado y mapa sin señal">📂</button>
+      </div>
+      <div id="cPanel" class="c-panel hidden"></div>
+      <div class="c-bar">
+        <button type="button" id="cTrack"><span>⏺</span>Recorrido</button>
+        <button type="button" id="cPoint"><span>📍</span>Punto</button>
+        <button type="button" id="cMeasure"><span>📐</span>Medir</button>
+      </div>
+      <div id="cToast" class="c-toast"></div>
+    </section>
+
     <!-- ALERTAS -->
     <section id="tab-alertas" class="tab" aria-label="Alertas">
       <h2>Alertas del SMN en tu localidad</h2>
@@ -144,7 +162,8 @@
         Radar: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a> ·
         Alertas: <a href="https://www.smn.gob.ar/" target="_blank" rel="noopener">Servicio Meteorológico Nacional</a> ·
         Focos de calor: <a href="https://firms.modaps.eosdis.nasa.gov/" target="_blank" rel="noopener">NASA FIRMS</a> ·
-        Mapa: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a> · <a href="https://leafletjs.com/" target="_blank" rel="noopener">Leaflet</a>.
+        Mapa: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a> · <a href="https://leafletjs.com/" target="_blank" rel="noopener">Leaflet</a> ·
+        Campo: imágenes Esri World Imagery y <a href="https://s2maps.eu" target="_blank" rel="noopener">Sentinel-2 cloudless</a> de EOX (datos Copernicus Sentinel 2016-2017, CC BY 4.0).
       </p>
       <p>Sin publicidad ni rastreadores. Tu ubicación queda solo en este teléfono.</p>
     </footer>
@@ -153,6 +172,7 @@
   <nav class="tabs" aria-label="Secciones">
     <button class="tab-btn active" data-tab="hoy"><span>☀️</span>Hoy</button>
     <button class="tab-btn" data-tab="mapa"><span>🛰️</span>Mapa</button>
+    <button class="tab-btn" data-tab="campo"><span>🧭</span>Campo</button>
     <button class="tab-btn" data-tab="reportes"><span>📷</span>Reportes<i id="repDot" class="badge hidden"></i></button>
     <button class="tab-btn" data-tab="alertas"><span>⚠️</span>Alertas<i id="alertDot" class="dot hidden"></i></button>
     <button class="tab-btn" data-tab="rutas"><span>🛣️</span>Rutas</button>
@@ -214,6 +234,48 @@
     </form>
   </dialog>
 
+  <!-- Campo: punto nuevo -->
+  <dialog id="wpDialog">
+    <form method="dialog" class="dlg">
+      <h3>Marcar punto</h3>
+      <p id="wLoc" class="muted small"></p>
+      <div id="wTypes" class="towns"></div>
+      <input id="wName" type="text" maxlength="60" placeholder="Nombre (opcional)">
+      <label class="photo-pick">
+        <input id="wPhoto" type="file" accept="image/*" capture="environment" hidden>
+        <img id="wPreview" alt="" class="hidden">
+        <span id="wPhotoTxt">📷 Sacar foto (opcional)</span>
+      </label>
+      <textarea id="wNote" maxlength="500" rows="2" placeholder="Nota (opcional)"></textarea>
+      <button type="button" id="wSave" class="btn">Guardar punto</button>
+      <button value="cancel" class="btn ghost">Cancelar</button>
+    </form>
+  </dialog>
+
+  <!-- Campo: lo guardado y mapa sin señal -->
+  <dialog id="datosDialog">
+    <form method="dialog" class="dlg">
+      <h3>Lo guardado en este teléfono</h3>
+      <ul id="dList" class="dlist"></ul>
+      <button type="button" id="dExport" class="btn ghost file-btn">📤 Compartir todo (KMZ para Google Earth)</button>
+      <h4>Mapa para usar sin señal</h4>
+      <p class="muted small">Guarda la imagen Sentinel-2 de toda la provincia y, con más detalle, de tus predios. Conviene hacerlo con wifi.</p>
+      <button type="button" id="oBtn" class="btn">⬇️ Guardar mapa de los predios</button>
+      <div id="oProg" class="o-prog hidden"><i id="oBar"></i></div>
+      <p id="oInfo" class="muted small"></p>
+      <button value="cancel" class="btn ghost">Cerrar</button>
+    </form>
+  </dialog>
+
+  <dialog id="nameDialog">
+    <form method="dialog" class="dlg">
+      <h3 id="nTitle">Guardar</h3>
+      <input id="nInput" type="text" maxlength="80">
+      <button type="button" id="nOk" class="btn">Guardar</button>
+      <button type="button" id="nCancel" class="btn ghost">Cancelar</button>
+    </form>
+  </dialog>
+
   <!-- Cuenta y administración -->
   <dialog id="adminDialog">
     <form method="dialog" class="dlg">
@@ -243,5 +305,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="app.js"></script>
   <script src="privado.js"></script>
+  <script src="campo.js"></script>
 </body>
 </html>

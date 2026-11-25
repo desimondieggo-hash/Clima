@@ -53,6 +53,7 @@ function showTab(name) {
   document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.id === `tab-${name}`));
   if (name === "mapa") initMap();
+  if (name === "campo") { if (window.initCampo) window.initCampo(); } else if (window.leaveCampo) window.leaveCampo();
   if (window.onTab) window.onTab(name);
   window.scrollTo({ top: 0 });
 }
@@ -419,6 +420,7 @@ async function loadPredios() {
   // Los predios son privados: vienen de la base de Firebase y solo los ven los invitados.
   try { predios = window.FB ? await window.FB.loadPredios() : []; } catch { predios = []; }
   drawPredios();
+  if (window.onPrediosLoaded) window.onPrediosLoaded();
 }
 /** Predios con algún vértice dentro de los polígonos de un aviso. */
 function prediosEnAlerta(a) {
