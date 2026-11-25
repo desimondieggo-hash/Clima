@@ -19,9 +19,6 @@ concurrency:
 jobs:
   publicar:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - name: Armar el sitio
@@ -40,5 +37,16 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
+
+  # Publicar en un trabajo aparte (como recomienda GitHub): así el paquete ya está registrado cuando se lo busca.
+  desplegar:
+    needs: publicar
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Esperar a que GitHub registre el paquete
+        run: sleep 20
       - id: deploy
         uses: actions/deploy-pages@v4
